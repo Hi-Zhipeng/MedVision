@@ -1,0 +1,55 @@
+# Inference configuration for MedVision
+# This config is for pure inference without labels
+
+# General settings
+seed: 42
+
+# Model configuration (should match training)
+model:
+  type: "segmentation"
+  network:
+    name: "unet"
+    
+  in_channels: 1
+  out_channels: 1
+  features: [32, 64, 128, 256]
+  dropout: 0.0  # 推理时关闭dropout
+  # 推理时仍需要loss配置(但不会使用)
+  loss:
+    type: "dice"
+    smooth: 0.00001
+
+# Checkpoint path - 必须指定训练好的模型
+checkpoint_path: "outputs/checkpoints/last.ckpt"
+
+# Inference configuration
+inference:
+  # 输入图像目录 (只包含图像，不需要标签)
+  image_dir: "data/2D/images"
+  
+  # 输出配置
+  output_dir: "outputs/predictions"
+  save_format: "png"  # png, npy
+  
+  # 数据加载配置
+  batch_size: 4
+  num_workers: 4
+  pin_memory: true
+  image_suffix: "*.png"
+  
+  # 硬件配置
+  devices: 1
+  accelerator: "auto"
+  precision: 16-mixed 
+  
+  # 推理变换 (只处理图像，不需要label)
+  transforms:
+    Resized:
+      keys: ["image"]  # 注意：只有image，没有label
+      spatial_size: [256, 256]
+      mode: "bilinear"
+      align_corners: false
+    
+    NormalizeIntensity:  
+      keys: ["image"]
+      nonzero: true

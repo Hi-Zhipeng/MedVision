@@ -1,0 +1,6 @@
+include README.md
+include LICENSE
+include setup.py
+recursive-include medvision *
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]

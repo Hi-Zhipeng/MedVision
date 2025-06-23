@@ -1,0 +1,179 @@
+[build-system]
+requires = ["setuptools>=65", "wheel", "setuptools-scm>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "medvision"
+version = "0.1.0"
+description = "A medical image segmentation framework based on PyTorch Lightning"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Your Name", email = "weizhipeng@shu.edu.cn"}]
+maintainers = [{name = "Your Name", email = "weizhipeng@shu.edu.cn"}]
+keywords = ["medical imaging", "segmentation", "pytorch", "deep learning", "MONAI"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Healthcare Industry",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+    "pytorch-lightning>=2.0.0",
+    "lightning>=2.0.0",
+    "numpy>=1.21.0",
+    "pyyaml>=6.0",
+    "tqdm>=4.64.0",
+    "click>=8.0.0",
+    "pillow>=9.0.0",
+    "scikit-image>=0.19.0",
+    "pandas>=1.4.0",
+]
+
+[project.optional-dependencies]
+medical = [
+    "nibabel>=3.2.0",
+    "SimpleITK>=2.2.0",
+    "pydicom>=2.3.0",
+    "vtk>=9.2.0",
+]
+transforms = [
+    "monai>=1.3.0",
+    "torchio>=0.18.0",
+    "albumentations>=1.3.0",
+    "opencv-python>=4.7.0",
+]
+visualization = [
+    "matplotlib>=3.6.0",
+    "seaborn>=0.12.0",
+    "plotly>=5.10.0",
+    "tensorboard>=2.10.0",
+    "wandb>=0.13.0",
+]
+metrics = [
+    "scikit-learn>=1.1.0",
+    "scipy>=1.9.0",
+    "surface-distance>=0.1.0",
+    "hausdorff>=0.2.6",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=22.0.0",
+    "isort>=5.10.0",
+    "flake8>=5.0.0",
+    "mypy>=0.991",
+    "pre-commit>=2.20.0",
+]
+docs = [
+    "sphinx>=5.0.0",
+    "sphinx-rtd-theme>=1.2.0",
+    "myst-parser>=0.18.0",
+]
+all = [
+    "nibabel>=3.2.0",
+    "SimpleITK>=2.2.0",
+    "pydicom>=2.3.0",
+    "vtk>=9.2.0",
+    "monai>=1.3.0",
+    "torchio>=0.18.0",
+    "albumentations>=1.3.0",
+    "opencv-python>=4.7.0",
+    "matplotlib>=3.6.0",
+    "seaborn>=0.12.0",
+    "plotly>=5.10.0",
+    "tensorboard>=2.10.0",
+    "wandb>=0.13.0",
+    "scikit-learn>=1.1.0",
+    "scipy>=1.9.0",
+    "surface-distance>=0.1.0",
+    "hausdorff>=0.2.6",
+]
+
+[project.scripts]
+MedVision = "medvision.cli.main:main"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/medvision"
+Repository = "https://github.com/yourusername/medvision"
+Documentation = "https://medvision.readthedocs.io"
+"Bug Tracker" = "https://github.com/yourusername/medvision/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["medvision*"]
+exclude = ["tests*"]
+
+[tool.black]
+line-length = 88
+target-version = ["py38", "py39", "py310", "py311"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_third_party = ["torch", "pytorch_lightning", "monai", "numpy"]
+known_first_party = ["medvision"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+ignore_missing_imports = true
+show_error_codes = true
+strict_optional = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["medvision"]
+omit = ["*/tests/*", "*/test_*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+]

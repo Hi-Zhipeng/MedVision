@@ -1,0 +1,62 @@
+# General settings
+seed: 42
+
+# Model configuration
+model:
+  type: "segmentation"
+  network:
+    name: "unet"
+    
+  in_channels: 1
+  out_channels: 1
+  features: [32, 64, 128, 256]
+  dropout: 0.0 
+  metrics:
+    dice:
+      type: "dice"
+      threshold: 0.5
+    iou:
+      type: "iou" 
+      threshold: 0.5
+    accuracy:
+      type: "accuracy"
+      threshold: 0.5
+  loss:
+    type: "dice"
+    smooth: 0.00001
+# Checkpoint path
+checkpoint_path: "outputs/checkpoints/last.ckpt"
+
+# Data configuration
+data:
+  type: "medical"
+  batch_size: 8  
+  num_workers: 4
+  data_dir: "data/2D"
+  
+  # 数据集参数 - 与训练配置保持一致
+  dataset_args:  
+    image_subdir: "images" 
+    mask_subdir: "masks"   
+    image_suffix: "*.png"  
+    mask_suffix: "*.png"
+  
+  # 测试变换 - 与训练时的验证变换完全一致
+  test_transforms:
+    Resized:
+      keys: ["image", "label"]
+      spatial_size: [256, 256]
+      mode: ["bilinear", "nearest"]
+      align_corners: [false, null]
+    
+    NormalizeIntensityd:
+      keys: ["image"]
+      nonzero: true
+      channel_wise: false
+      
+# Testing configuration
+testing:
+  devices: 1
+  accelerator: "auto"
+  precision: 16-mixed 
+  output_dir: "outputs/predictions"

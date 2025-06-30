@@ -30,6 +30,14 @@ model:
     iou:
       type: "iou"
       threshold: 0.5
+    # hausdorff:
+    #   type: "hausdorff"
+    #   threshold: 0.5
+    #   percentile: 95
+    accuracy:
+      type: "accuracy"
+      threshold: 0.5
+      per_class: false
 
 # Data configuration
 data:

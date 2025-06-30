@@ -79,8 +79,35 @@ def train_model(config: Dict[str, Any]) -> None:
     # Train the model
     trainer.fit(model, datamodule=datamodule)
 
-    trainer.test(model, datamodule=datamodule)
+    test_results = trainer.test(model, datamodule=datamodule)
     
     print(f"Training completed. Model checkpoints saved at: {checkpoint_callback.dirpath}")
     print(f"Best model path: {checkpoint_callback.best_model_path}")
     print(f"Best model score: {checkpoint_callback.best_model_score:.4f}")
+
+    save_metrics = config["training"].get("save_metrics", True)
+    if save_metrics:
+        import json
+
+        metrics = trainer.callback_metrics
+        metrics_dict = {
+            k: float(v) for k, v in metrics.items() if isinstance(v, torch.Tensor)
+        }
+
+        test_metrics = {
+            f"test_{k}": float(v) for k, v in test_results[0].items()
+        } if test_results else {}
+
+        final_metrics = {
+            "train_val_metrics": metrics_dict,
+            "test_metrics": test_metrics,
+            "best_model_path": checkpoint_callback.best_model_path,
+            "best_model_score": float(checkpoint_callback.best_model_score)
+                if checkpoint_callback.best_model_score is not None else None
+        }
+
+        result_path = os.path.join(config["training"]["output_dir"], "results.json")
+        with open(result_path, "w") as f:
+            json.dump(final_metrics, f, indent=4)
+
+        print(f"Final metrics saved to: {result_path}")

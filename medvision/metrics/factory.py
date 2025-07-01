@@ -5,6 +5,7 @@ from typing import Dict, Any, Callable
 from .dice import DiceCoefficient
 from .iou import IoU
 from .accuracy import Accuracy
+from .hausdorff import HausdorffDistance
 
 
 def get_metrics(config: Dict[str, Any]) -> Dict[str, Callable]:
@@ -21,7 +22,6 @@ def get_metrics(config: Dict[str, Any]) -> Dict[str, Callable]:
     
     for metric_name, metric_config in config.items():
         metric_type = metric_config["type"].lower()
-        
         if metric_type == "dice":
             metrics[metric_name] = DiceCoefficient(
                 smooth=metric_config.get("smooth", 1e-6),
@@ -38,6 +38,11 @@ def get_metrics(config: Dict[str, Any]) -> Dict[str, Callable]:
             metrics[metric_name] = Accuracy(
                 threshold=metric_config.get("threshold", 0.5),
                 per_class=metric_config.get("per_class", False)
+            )
+        elif metric_type == "hausdorff":
+            metrics[metric_name] = HausdorffDistance(
+                threshold=metric_config.get("threshold", 0.5),
+                percentile=metric_config.get("percentile", 95)
             )
         else:
             raise ValueError(f"Unknown metric type: {metric_type}")

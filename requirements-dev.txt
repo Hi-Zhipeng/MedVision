@@ -29,3 +29,6 @@ hausdorff>=0.2.6
 
 # Additional medical imaging
 vtk>=9.2.0
+
+# Models
+segmentation-models-pytorch>=0.5.0

@@ -6,6 +6,8 @@ from typing import Dict, Any
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
+import segmentation_models_pytorch as smp
+
 from torch.optim import Adam, SGD
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR
 
@@ -93,6 +95,126 @@ class SegmentationModel(pl.LightningModule):
                 in_channels=self.config.get("in_channels", 1),
                 out_channels=self.config.get("out_channels", 1),
                 base_channels=self.config.get("base_channels", 32),
+            )
+        elif network_name == "u2net":
+            from medvision.models.u2net import U2NET
+            return U2NET(
+                in_ch=self.config.get("in_channels", 3),
+                out_ch=self.config.get("out_channels", 1)
+            )
+        elif network_name == "unet_2plus":
+            from medvision.models.UNet_2Plus import UNet_2Plus
+            return UNet_2Plus(
+                in_channels=self.config.get("in_channels", 3),
+                n_classes=self.config.get("out_channels", 1)
+            )
+        elif network_name == "unet_3plus":
+            from medvision.models.UNet_3Plus import UNet_3Plus
+            return UNet_3Plus(
+                in_channels=self.config.get("in_channels", 3),
+                n_classes=self.config.get("out_channels", 1)
+            )
+        elif network_name == "cenet":
+            from medvision.models.cenet import CE_Net_
+            return CE_Net_(
+                num_channels=self.config.get("in_channels", 3),
+                num_classes=self.config.get("out_channels", 1)
+            )
+        elif network_name == "unet++":
+            return smp.UnetPlusPlus(
+                encoder_name=self.config.get("encoder_name", "resnet34"),
+                in_channels=self.config.get("in_channels", 3),
+                classes=self.config.get("out_channels", 1),
+                activation=self.config.get("activation", "sigmoid"),
+                encoder_weights=self.config.get("encoder_weights", "imagenet"),
+            )
+        elif network_name == "fpn":
+            return smp.FPN(
+                encoder_name=self.config.get("encoder_name", "resnet34"),
+                in_channels=self.config.get("in_channels", 3),
+                classes=self.config.get("out_channels", 1),
+                activation=self.config.get("activation", "sigmoid"),
+                encoder_weights=self.config.get("encoder_weights", "imagenet"),
+            )
+        elif network_name == "linknet":
+            return smp.Linknet(
+                encoder_name=self.config.get("encoder_name", "resnet34"),
+                in_channels=self.config.get("in_channels", 3),
+                classes=self.config.get("out_channels", 1),
+                activation=self.config.get("activation", "sigmoid"),
+                encoder_weights=self.config.get("encoder_weights", "imagenet"),
+            )
+        elif network_name == "pspnet":
+            return smp.PSPNet(
+                encoder_name=self.config.get("encoder_name", "resnet34"),
+                in_channels=self.config.get("in_channels", 3),
+                classes=self.config.get("out_channels", 1),
+                activation=self.config.get("activation", "sigmoid"),
+                encoder_weights=self.config.get("encoder_weights", "imagenet"),
+            )
+        elif network_name == "deeplabv3":
+            return smp.DeepLabV3(
+                encoder_name=self.config.get("encoder_name", "resnet34"),
+                in_channels=self.config.get("in_channels", 3),
+                classes=self.config.get("out_channels", 1),
+                activation=self.config.get("activation", "sigmoid"),
+                encoder_weights=self.config.get("encoder_weights", "imagenet"),
+            )
+        elif network_name == "deeplabv3+":
+            return smp.DeepLabV3Plus(
+                encoder_name=self.config.get("encoder_name", "resnet34"),
+                in_channels=self.config.get("in_channels", 3),
+                classes=self.config.get("out_channels", 1),
+                activation=self.config.get("activation", "sigmoid"),
+                encoder_weights=self.config.get("encoder_weights", "imagenet"),
+            )
+        elif network_name == "linknet":
+            return smp.Linknet(
+                encoder_name=self.config.get("encoder_name", "resnet34"),
+                in_channels=self.config.get("in_channels", 3),
+                classes=self.config.get("out_channels", 1),
+                activation=self.config.get("activation", "sigmoid"),
+                encoder_weights=self.config.get("encoder_weights", "imagenet"),
+            )
+        elif network_name == "manet":
+            return smp.MAnet(
+                encoder_name=self.config.get("encoder_name", "resnet34"),
+                in_channels=self.config.get("in_channels", 3),
+                classes=self.config.get("out_channels", 1),
+                activation=self.config.get("activation", "sigmoid"),
+                encoder_weights=self.config.get("encoder_weights", "imagenet"),
+            )
+        elif network_name == "pan":
+            return smp.PAN(
+                encoder_name=self.config.get("encoder_name", "resnet34"),
+                in_channels=self.config.get("in_channels", 3),
+                classes=self.config.get("out_channels", 1),
+                activation=self.config.get("activation", "sigmoid"),
+                encoder_weights=self.config.get("encoder_weights", "imagenet"),
+            )
+        elif network_name == "upernet":
+            return smp.UPerNet(
+                encoder_name=self.config.get("encoder_name", "resnet34"),
+                in_channels=self.config.get("in_channels", 3),
+                classes=self.config.get("out_channels", 1),
+                activation=self.config.get("activation", "sigmoid"),
+                encoder_weights=self.config.get("encoder_weights", "imagenet"),
+            )
+        elif network_name == "segformer":
+            return smp.Segformer(
+                encoder_name=self.config.get("encoder_name", "resnet34"),
+                in_channels=self.config.get("in_channels", 3),
+                classes=self.config.get("out_channels", 1),
+                activation=self.config.get("activation", "sigmoid"),
+                encoder_weights=self.config.get("encoder_weights", "imagenet"),
+            )
+        elif network_name == "dpt":
+            return smp.DPT(
+                encoder_name=self.config.get("encoder_name", "tu-resnet34"),
+                in_channels=self.config.get("in_channels", 3),
+                classes=self.config.get("out_channels", 1),
+                activation=self.config.get("activation", "sigmoid"),
+                encoder_weights=self.config.get("encoder_weights", "imagenet"),
             )
         raise ValueError(f"Unknown model name: {network_name}")
     

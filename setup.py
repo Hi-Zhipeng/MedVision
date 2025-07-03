@@ -86,6 +86,8 @@ extras_require = {
         "scipy>=1.9.0",
         "surface-distance>=0.1.0",
         "hausdorff>=0.2.6",
+        # Models
+        "segmentation-models-pytorch>=0.5.0",
     ]
 }
 

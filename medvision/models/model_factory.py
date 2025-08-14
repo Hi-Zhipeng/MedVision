@@ -1,7 +1,7 @@
 """
 Model factory for MedVision.
 """
-
+·
 from typing import Dict, Any
 import pytorch_lightning as pl
 import torch

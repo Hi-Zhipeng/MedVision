@@ -8,8 +8,8 @@ version = "0.2.1"
 description = "A medical image segmentation framework based on PyTorch Lightning"
 readme = "README.md"
 license = {file = "LICENSE"}
-authors = [{name = "Your Name", email = "weizhipeng@shu.edu.cn"}]
-maintainers = [{name = "Your Name", email = "weizhipeng@shu.edu.cn"}]
+authors = [{name = "weizhipeng", email = "weizhipeng@shu.edu.cn"}]
+maintainers = [{name = "weizhipeng", email = "weizhipeng@shu.edu.cn"}]
 keywords = ["medical imaging", "segmentation", "pytorch", "deep learning", "MONAI"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -111,10 +111,10 @@ all = [
 MedVision = "medvision.cli.main:main"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/medvision"
-Repository = "https://github.com/yourusername/medvision"
-Documentation = "https://medvision.readthedocs.io"
-"Bug Tracker" = "https://github.com/yourusername/medvision/issues"
+Homepage = "https://github.com/Hi-Zhipeng"
+Repository = "https://github.com/Hi-Zhipeng/MedVision"
+Documentation = "https://github.com/Hi-Zhipeng/MedVision/wiki"
+"Bug Tracker" = "https://github.com/Hi-Zhipeng/MedVision/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]

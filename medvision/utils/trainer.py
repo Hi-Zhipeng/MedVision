@@ -7,11 +7,12 @@ import torch
 from typing import Dict, Any
 from pathlib import Path
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 
 from medvision.models import get_model
 from medvision.datasets import get_datamodule
+from medvision.utils.onnx_utils import convert_models_to_onnx
 
 
 def train_model(config: Dict[str, Any]) -> None:
@@ -35,14 +36,13 @@ def train_model(config: Dict[str, Any]) -> None:
     # Configure callbacks
     callbacks = []
     
-    # ModelCheckpoint callback
     checkpoint_callback = ModelCheckpoint(
         dirpath=os.path.join(config["training"]["output_dir"], "checkpoints"),
         filename="{epoch:02d}-{val_loss:.4f}",
         monitor=config["training"].get("monitor", "val_loss"),
         mode=config["training"].get("monitor_mode", "min"),
-        save_top_k=config["training"].get("save_top_k", 3),
-        save_last=True,
+        save_top_k=config["training"].get("save_top_k", 1),
+        save_last=False,
     )
     callbacks.append(checkpoint_callback)
     
@@ -73,11 +73,35 @@ def train_model(config: Dict[str, Any]) -> None:
         logger=logger,
         log_every_n_steps=config["training"].get("log_every_n_steps", 10),
         deterministic=config["training"].get("deterministic", False),
-        gradient_clip_val=config["training"].get("gradient_clip_val", 0.0),
+        gradient_clip_val=config["training"].get("gradient_clip_val", 0.0)
     )
     
     # Train the model
     trainer.fit(model, datamodule=datamodule)
+
+    # 保留最好的Top k模型后，进行模型转换
+    convert_to_onnx = config["training"].get("convert_to_onnx", config["training"].get("export_onnx", False))
+    converted_models = []
+    onnx_dir = None
+    
+    if convert_to_onnx:
+        print("\n" + "="*50)
+        print("Converting models to ONNX format...")
+        print("="*50)
+        try:
+            converted_models, onnx_dir = convert_models_to_onnx(
+                checkpoint_callback, 
+                model.__class__, 
+                config["model"], 
+                datamodule
+            )
+            print(f"\n✓ ONNX conversion completed!")
+            print(f"✓ ONNX models saved to: {onnx_dir}")
+            print(f"✓ Successfully converted {len(converted_models)} models to ONNX format")
+        except Exception as e:
+            print(f"❌ ONNX conversion failed: {str(e)}")
+        print("="*50 + "\n")
+    
 
     train_results = trainer.logged_metrics
 
@@ -113,6 +137,14 @@ def train_model(config: Dict[str, Any]) -> None:
                 if checkpoint_callback.best_model_score is not None else None,
             "monitor": config["training"].get("monitor", "val_loss"),
         }
+        
+        # 添加ONNX转换信息
+        if convert_to_onnx and converted_models:
+            final_metrics["onnx_conversion"] = {
+                "converted_count": len(converted_models),
+                "onnx_directory": onnx_dir,
+                "models": converted_models
+            }
 
         result_path = os.path.join(config["training"]["output_dir"], "results.json")
         with open(result_path, "w") as f:

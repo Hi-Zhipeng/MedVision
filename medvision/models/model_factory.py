@@ -73,6 +73,7 @@ class SegmentationModel(pl.LightningModule):
         Returns:
             Neural network module
         """
+
         network = self.config["network"]
         network_name = network.get("name", "unet").lower()
 
@@ -312,11 +313,11 @@ class SegmentationModel(pl.LightningModule):
         loss = self.loss_fn(logits, masks)
         
         # Log metrics
-        self.log("train/train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
+        self.log("train/train_loss", loss, on_step=True, on_epoch=True, prog_bar=True,sync_dist=True)
         
         for metric_name, metric_fn in self.metrics.items():
             metric_value = metric_fn(logits, masks)
-            self.log(f"train/train_{metric_name}", metric_value, on_step=False, on_epoch=True)
+            self.log(f"train/train_{metric_name}", metric_value, on_step=False, on_epoch=True,sync_dist=True)
         
         return {"loss": loss}
     
@@ -337,12 +338,12 @@ class SegmentationModel(pl.LightningModule):
         loss = self.loss_fn(logits, masks)
         
         # Log metrics
-        self.log("val/val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val/val_loss", loss, on_step=False, on_epoch=True, prog_bar=True,sync_dist=True)
         
         # Calculate metrics - let the metric functions handle dimension compatibility
         for metric_name, metric_fn in self.metrics.items():
             metric_value = metric_fn(logits, masks)
-            self.log(f"val/val_{metric_name}", metric_value, on_step=False, on_epoch=True)
+            self.log(f"val/val_{metric_name}", metric_value, on_step=False, on_epoch=True, sync_dist=True)
         
         return {"val_loss": loss}
     
@@ -364,7 +365,6 @@ class SegmentationModel(pl.LightningModule):
         
         # Log metrics
         self.log("test/test_loss", loss, on_step=False, on_epoch=True)
-        
         results = {"test_loss": loss}
         
         # Calculate metrics - let the metric functions handle dimension compatibility
@@ -405,4 +405,3 @@ class SegmentationModel(pl.LightningModule):
         probabilities = torch.sigmoid(logits)
         
         return probabilities, filenames
-

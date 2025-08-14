@@ -3,10 +3,10 @@ seed: 42
 
 # Model configuration
 model:
+  model_dim: 3D
   type: "segmentation"
   network:
     name: "unet3d"
-
   in_channels: 1
   out_channels: 1
   features: [32, 64, 128, 256]
@@ -164,3 +164,9 @@ training:
   save_top_k: 3
   log_every_n_steps: 10
   deterministic: false
+  
+  # ONNX Export Configuration for 3D models
+  export_onnx: true              # Whether to export ONNX models alongside checkpoints
+  input_depth: 64                # Input depth for 3D ONNX export
+  input_height: 128              # Input height for 3D ONNX export  
+  input_width: 128               # Input width for 3D ONNX export

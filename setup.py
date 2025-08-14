@@ -50,6 +50,10 @@ extras_require = {
         "surface-distance>=0.1.0",
         "hausdorff>=0.2.6",
     ],
+    "export": [
+        "onnx>=1.12.0",
+        "onnxruntime>=1.12.0",
+    ],
     "dev": [
         "pytest>=7.0.0",
         "pytest-cov>=4.0.0",
@@ -88,12 +92,15 @@ extras_require = {
         "hausdorff>=0.2.6",
         # Models
         "segmentation-models-pytorch>=0.5.0",
+        # Export
+        "onnx>=1.12.0",
+        "onnxruntime>=1.12.0",
     ]
 }
 
 setup(
     name="medvision",
-    version="0.1.0",
+    version="0.1.1",
     author="weizhipeng",
     author_email="weizhipeng@shu.edu.cn",
     description="A medical image segmentation framework based on PyTorch Lightning",

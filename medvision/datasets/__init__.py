@@ -80,55 +80,21 @@ class MedicalDataModule(pl.LightningDataModule):
         self.train_transforms = get_transforms(self.config.get("train_transforms", {}))
         self.val_transforms = get_transforms(self.config.get("val_transforms", {}))
         self.test_transforms = get_transforms(self.config.get("test_transforms", {}))
-        
-        # Create datasets
+
+        # 分别加载 train/val/test 子目录
         if stage == "fit" or stage is None:
-            dataset = MedicalImageDataset(
+            self.train_dataset = MedicalImageDataset(
                 data_dir=self.data_dir,
                 transform=self.train_transforms,
                 mode="train",
                 **self.config.get("dataset_args", {})
             )
-            
-            # 为简单起见，我们将直接使用相同的数据集对象，但分别为训练和验证指定不同的转换
-            # 这避免了对数据集进行拆分
-            try:
-                # 尝试标准的拆分方式
-                train_size = int(self.train_val_split[0] * len(dataset))
-                val_size = len(dataset) - train_size
-                
-                # 手动设定随机数种子以获得可重复的拆分
-                generator = torch.Generator().manual_seed(self.seed)
-                self.train_dataset, self.val_dataset = random_split(
-                    dataset, [train_size, val_size], generator=generator
-                )
-                
-                # 为验证集重写转换
-                self.val_dataset.dataset = MedicalImageDataset(
-                    data_dir=self.data_dir,
-                    transform=self.val_transforms,
-                    mode="val",
-                    **self.config.get("dataset_args", {})
-                )
-            except Exception as e:
-                print(f"数据集拆分出错: {e}")
-                print("将使用单独的训练集和验证集")
-                
-                # 直接创建分开的训练集和验证集
-                self.train_dataset = MedicalImageDataset(
-                    data_dir=self.data_dir,
-                    transform=self.train_transforms,
-                    mode="train",
-                    **self.config.get("dataset_args", {})
-                )
-                
-                self.val_dataset = MedicalImageDataset(
-                    data_dir=self.data_dir,
-                    transform=self.val_transforms,
-                    mode="val",
-                    **self.config.get("dataset_args", {})
-                )
-            
+            self.val_dataset = MedicalImageDataset(
+                data_dir=self.data_dir,
+                transform=self.val_transforms,
+                mode="val",
+                **self.config.get("dataset_args", {})
+            )
         if stage == "test" or stage is None:
             self.test_dataset = MedicalImageDataset(
                 data_dir=self.data_dir,

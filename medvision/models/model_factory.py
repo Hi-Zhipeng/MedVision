@@ -1,7 +1,6 @@
 """
 Model factory for MedVision.
 """
-·
 from typing import Dict, Any
 import pytorch_lightning as pl
 import torch
@@ -364,13 +363,13 @@ class SegmentationModel(pl.LightningModule):
         loss = self.loss_fn(logits, masks)
         
         # Log metrics
-        self.log("test/test_loss", loss, on_step=False, on_epoch=True)
+        self.log("test/test_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
         results = {"test_loss": loss}
         
         # Calculate metrics - let the metric functions handle dimension compatibility
         for metric_name, metric_fn in self.metrics.items():
             metric_value = metric_fn(logits, masks)
-            self.log(f"test/test_{metric_name}", metric_value, on_step=False, on_epoch=True)
+            self.log(f"test/test_{metric_name}", metric_value, on_step=False, on_epoch=True, sync_dist=True)
             results[f"test_{metric_name}"] = metric_value
         
         return results

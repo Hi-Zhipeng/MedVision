@@ -32,7 +32,7 @@ class MedicalImageDataset(Dataset):
     Or provide custom loaders for different directory structures.
     """
     
-    def __init__(self, 
+    def __init__(self,
                  data_dir: Union[str, Path],
                  transform: Optional[Callable] = None,
                  mode: str = "train",
@@ -60,10 +60,10 @@ class MedicalImageDataset(Dataset):
         self.data_dir = Path(data_dir)
         self.transform = transform
         self.mode = mode
-        
-        # Define subdirectories
-        self.image_dir = self.data_dir / image_subdir
-        self.mask_dir = self.data_dir / mask_subdir
+        # 自动拼接子集路径
+        subset_dir = self.data_dir / self.mode
+        self.image_dir = subset_dir / image_subdir
+        self.mask_dir = subset_dir / mask_subdir
         
         # Loaders
         self.image_loader = image_loader or load_image
@@ -128,8 +128,6 @@ class MedicalImageDataset(Dataset):
         else:
             # 创建空掩码
             mask = torch.zeros_like(image)
-
-
 
         # 应用变换
         if self.transform is not None:

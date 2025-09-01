@@ -8,6 +8,82 @@ import torch
 from typing import Dict, Any, List, Tuple
 
 
+def generate_triton_config(
+    model_name: str,
+    input_shape: List[int],
+    output_shape: List[int] = None,
+    max_batch_size: int = 8,
+    data_type: str = "TYPE_FP32"
+) -> str:
+    """
+    生成 Triton Inference Server 的 config.pbtxt 配置文件内容
+    
+    Args:
+        model_name: 模型名称
+        input_shape: 输入张量形状 (包含batch维度)
+        output_shape: 输出张量形状 (包含batch维度)，如果为None则假设与输入相同
+        max_batch_size: 最大批次大小
+        data_type: 数据类型
+        
+    Returns:
+        str: config.pbtxt 配置文件内容
+    """
+    # 去掉batch维度，Triton配置中不包含batch维度
+    input_dims = input_shape[1:]  # 去掉第一个维度(batch)
+    output_dims = output_shape[1:] if output_shape else input_dims
+    
+    config_content = f'''name: "{model_name}"
+platform: "onnxruntime_onnx"
+max_batch_size: {max_batch_size}
+
+input [
+  {{
+    name: "input"
+    data_type: {data_type}
+    dims: [{", ".join(map(str, input_dims))}]
+  }}
+]
+
+output [
+  {{
+    name: "output"
+    data_type: {data_type}
+    dims: [{", ".join(map(str, output_dims))}]
+  }}
+]
+
+version_policy: {{
+  all: {{}}
+}}
+
+instance_group [
+  {{
+    count: 1
+    kind: KIND_GPU
+  }}
+]
+
+optimization: {{
+  execution_accelerators: {{
+    gpu_execution_accelerator: [
+      {{
+        name: "tensorrt"
+        parameters: {{
+          key: "precision_mode"
+          value: "FP16"
+        }}
+        parameters: {{
+          key: "max_workspace_size_bytes"
+          value: "1073741824"
+        }}
+      }}
+    ]
+  }}
+}}
+'''
+    return config_content
+
+
 def convert_models_to_onnx(
     checkpoint_callback, 
     model_class, 
@@ -33,8 +109,14 @@ def convert_models_to_onnx(
     onnx_dir = os.path.join(os.path.dirname(checkpoint_dir), "onnx_models")
     os.makedirs(onnx_dir, exist_ok=True)
     
-    # 获取所有检查点文件
-    checkpoint_files = glob.glob(os.path.join(checkpoint_dir, "*.ckpt"))
+    # 获取最佳模型路径
+    best_model_path = checkpoint_callback.best_model_path
+    
+    if not best_model_path or not os.path.exists(best_model_path):
+        print("❌ No best model found!")
+        return [], onnx_dir
+    
+    checkpoint_files = [best_model_path]  # 只处理最佳模型
     
     # 获取示例输入
     datamodule.setup('fit')
@@ -43,7 +125,8 @@ def convert_models_to_onnx(
     
     converted_models = []
     
-    print(f"Found {len(checkpoint_files)} checkpoint files to convert...")
+    print(f"Converting best model based on monitored metric: {os.path.basename(best_model_path)}")
+    print(f"Best model score: {checkpoint_callback.best_model_score}")
     
     # 检查示例输入的设备
     print(f"Sample input device: {sample_input.device}")
@@ -95,31 +178,88 @@ def convert_models_to_onnx(
                 )
             
             # 验证ONNX模型
+            output_shape = None
             try:
                 import onnx
                 onnx_model = onnx.load(onnx_path)
                 onnx.checker.check_model(onnx_model)
                 print(f"✓ ONNX model validation passed: {ckpt_name}")
+                
+                # 获取输出形状信息
+                try:
+                    with torch.no_grad():
+                        dummy_output = model.net(sample_input_cpu)
+                        output_shape = list(dummy_output.shape)
+                except Exception as e:
+                    print(f"  ⚠ Could not infer output shape: {e}")
+                
             except ImportError:
                 print(f"⚠ ONNX validation skipped (onnx package not installed): {ckpt_name}")
             except Exception as e:
                 print(f"⚠ ONNX validation failed: {ckpt_name}, error: {e}")
             
+            # 生成 Triton config.pbtxt
+            triton_model_dir = None
+            triton_config_path = None
+            try:
+                # 创建模型目录（Triton要求每个模型有自己的目录）
+                triton_model_dir = os.path.join(onnx_dir, ckpt_name)
+                os.makedirs(triton_model_dir, exist_ok=True)
+                
+                # 移动ONNX文件到模型目录的1版本子目录
+                triton_version_dir = os.path.join(triton_model_dir, "1")
+                os.makedirs(triton_version_dir, exist_ok=True)
+                
+                # 复制ONNX文件到版本目录
+                import shutil
+                triton_onnx_path = os.path.join(triton_version_dir, "model.onnx")
+                shutil.copy2(onnx_path, triton_onnx_path)
+                
+                # 生成config.pbtxt
+                config_content = generate_triton_config(
+                    model_name=ckpt_name,
+                    input_shape=list(input_shape),
+                    output_shape=output_shape,
+                    max_batch_size=config.get("triton_max_batch_size", 8),
+                    data_type=config.get("triton_data_type", "TYPE_FP32")
+                )
+                
+                triton_config_path = os.path.join(triton_model_dir, "config.pbtxt")
+                with open(triton_config_path, 'w', encoding='utf-8') as f:
+                    f.write(config_content)
+                
+                print(f"  ✓ Generated Triton config: {triton_config_path}")
+                
+            except Exception as e:
+                print(f"  ⚠ Failed to generate Triton config for {ckpt_name}: {e}")
+            
             converted_models.append({
                 "checkpoint_path": ckpt_path,
                 "onnx_path": onnx_path,
+                "triton_model_dir": triton_model_dir,
+                "triton_config_path": triton_config_path,
                 "model_name": ckpt_name,
                 "input_shape": list(input_shape),
+                "output_shape": output_shape,
                 "original_device": str(model_device) if 'model_device' in locals() else "unknown"
             })
             
-            print(f"  ✓ Successfully converted {ckpt_name} to ONNX")
+            print(f"  ✓ Successfully converted {ckpt_name} to ONNX with Triton config")
             
         except Exception as e:
             print(f"  ❌ Failed to convert {ckpt_name}: {str(e)}")
             import traceback
             print(f"  Full error traceback:")
             traceback.print_exc()
+    
+    print(f"\n📁 Best model ONNX and Triton config saved to: {onnx_dir}")
+    if converted_models:
+        print(f"📊 Successfully converted best model: {converted_models[0]['model_name']}")
+        print(f"📈 Best model score: {checkpoint_callback.best_model_score}")
+        if converted_models[0].get('triton_config_path'):
+            print(f"🚀 Triton config generated: {converted_models[0]['triton_config_path']}")
+    else:
+        print("❌ No models were successfully converted")
     
     return converted_models, onnx_dir
 

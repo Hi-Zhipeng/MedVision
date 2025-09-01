@@ -12,7 +12,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 
 from medvision.models import get_model
 from medvision.datasets import get_datamodule
-from medvision.utils.onnx_utils import convert_models_to_onnx
+from medvision.utils.onnx_utils import convert_models_to_onnx, generate_triton_config
 
 
 def train_model(config: Dict[str, Any]) -> None:
@@ -38,7 +38,7 @@ def train_model(config: Dict[str, Any]) -> None:
     
     checkpoint_callback = ModelCheckpoint(
         dirpath=os.path.join(config["training"]["output_dir"], "checkpoints"),
-        filename="{epoch:02d}-{val_loss:.4f}",
+        filename=f"{config['training'].get('experiment_name')}",
         monitor=config["training"].get("monitor", "val_loss"),
         mode=config["training"].get("monitor_mode", "min"),
         save_top_k=config["training"].get("save_top_k", 1),
@@ -59,7 +59,7 @@ def train_model(config: Dict[str, Any]) -> None:
     # Configure logger
     logger = TensorBoardLogger(
         save_dir=config["training"]["output_dir"],
-        name=config["training"].get("experiment_name", "medvision"),
+        name="logs",
         version=config["training"].get("version", None),
     )
     

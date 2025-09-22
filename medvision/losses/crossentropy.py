@@ -12,7 +12,7 @@ class CrossEntropyLoss(nn.Module):
     Supports both binary and multi-class segmentation.
     """
     
-    def __init__(self, weight=None, ignore_index=-100, reduction='mean', label_smoothing=0.0):
+    def __init__(self, weight=None, ignore_index=-100, reduction='mean', label_smoothing=0.0, num_classes=None):
         """
         Initialize the Cross Entropy loss.
         
@@ -21,12 +21,14 @@ class CrossEntropyLoss(nn.Module):
             ignore_index: Specifies a target value that is ignored and does not contribute to the input gradient
             reduction: Reduction mode ('mean', 'sum', or 'none')
             label_smoothing: Label smoothing factor (0.0 means no smoothing)
+            num_classes: Number of classes for automatic one-hot encoding
         """
         super().__init__()
         self.weight = weight
         self.ignore_index = ignore_index
         self.reduction = reduction
         self.label_smoothing = label_smoothing
+        self.num_classes = num_classes
     
     def forward(self, inputs, targets):
         """

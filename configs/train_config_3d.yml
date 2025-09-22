@@ -8,11 +8,11 @@ model:
   network:
     name: "unet3d"
   in_channels: 1
-  out_channels: 1
+  out_channels: 2
   features: [32, 64, 128, 256]
   dropout: 0.1
   loss:
-    type: "dice"
+    type: "focal"
     smooth: 0.00001
   optimizer:
     type: "adam"
@@ -30,19 +30,22 @@ model:
     iou:
       type: "iou"
       threshold: 0.5
-
+    accuracy:
+      type: "accuracy"
+      threshold: 0.5
+      per_class: false
 # Data configuration
 data:
   type: "medical"
   batch_size: 1
   num_workers: 4
-  data_dir: "data/3D"
+  data_dir: "2025WAIC/ChestCT_Seg"
   train_val_split: [0.8, 0.2]
   dataset_args:  
     image_subdir: "images" 
-    mask_subdir: "masks"
-    image_suffix: "*.nii.gz"  
-    mask_suffix: "*.nii.gz" 
+    mask_subdir: "labels"
+    image_suffix: "*.nii"  
+    mask_suffix: "*.nii" 
 
 
   train_transforms:
@@ -151,7 +154,7 @@ data:
       
 # Training configuration
 training:
-  max_epochs: 2
+  max_epochs: 200
   devices: 1
   accelerator: "auto"
   precision: 16-mixed 
@@ -164,9 +167,5 @@ training:
   save_top_k: 3
   log_every_n_steps: 10
   deterministic: false
-  
-  # ONNX Export Configuration for 3D models
-  export_onnx: true              # Whether to export ONNX models alongside checkpoints
-  input_depth: 64                # Input depth for 3D ONNX export
-  input_height: 128              # Input height for 3D ONNX export  
-  input_width: 128               # Input width for 3D ONNX export
+  export_onnx: true
+

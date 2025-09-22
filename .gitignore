@@ -317,3 +317,7 @@ docs/_build/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Dataset directories
+Dataset/
+2025WAIC/

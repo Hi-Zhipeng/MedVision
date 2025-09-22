@@ -19,6 +19,7 @@ class DiceLoss(nn.Module):
         Args:
             smooth: Small constant to avoid division by zero
             reduction: Reduction mode ('mean', 'sum', or 'none')
+            num_classes: Number of classes for automatic one-hot encoding
         """
         super().__init__()
         self.smooth = smooth
@@ -30,20 +31,19 @@ class DiceLoss(nn.Module):
         
         Args:
             inputs: Predicted probabilities (logits)
-            targets: Ground truth masks
+            targets: Ground truth masks (can be class indices or one-hot)
             
         Returns:
             Dice loss
         """
+     
         # Apply sigmoid/softmax
         if inputs.size(1) == 1:
             inputs = torch.sigmoid(inputs)
         else:
             inputs = F.softmax(inputs, dim=1)
 
-        # Add channel dim to targets if missing
-        if targets.dim() == inputs.dim() - 1:
-            targets = targets.unsqueeze(1)
+        targets = nn.functional.one_hot(targets.long(), num_classes=inputs.size(1)).permute(0, 3, 1, 2).float() if targets.dim() == 3 else nn.functional.one_hot(targets.long(), num_classes=inputs.size(1)).permute(0, 4, 1, 2, 3).float()
 
         # Ensure same shape
         assert inputs.shape == targets.shape, f"Shape mismatch: {inputs.shape} vs {targets.shape}"
@@ -64,4 +64,4 @@ class DiceLoss(nn.Module):
         elif self.reduction == 'sum':
             return loss.sum()
         else:
-            return loss  # shape: [B, C]
+            return loss

@@ -61,3 +61,4 @@ class UNet3D(nn.Module):
         d1 = self.dec1(torch.cat([d1, e1], dim=1))
 
         return self.out_conv(d1)
+    

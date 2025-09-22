@@ -1,0 +1,66 @@
+# General settings
+seed: 42
+
+task_type: 2D
+
+# Model configuration
+model:
+  type: "segmentation"
+  network:
+    name: "unet"
+  in_channels: 3  # RGB images
+  out_channels: 4  
+  features: [32, 64, 128, 256]
+  dropout: 0.1
+  loss:
+    type: "dice"
+    smooth: 0.00001
+  optimizer:
+    type: "adam"
+    lr: 0.001
+    weight_decay: 0.0001
+  scheduler:
+    type: "plateau"
+    patience: 5
+    factor: 0.5
+    monitor: "val/val_loss"
+  metrics:
+    dice:
+      type: "dice"
+      threshold: 0.5
+    iou:
+      type: "iou"
+      threshold: 0.5
+
+# Data configuration
+data:
+  type: "color" 
+  data_dir: "Dataset"
+  batch_size: 4 
+  num_workers: 2
+  pin_memory: true
+  train_val_split: [0.8, 0.2]
+  dataset_args:
+    image_subdir: "image"
+    mask_subdir: "label"
+    image_suffix: "*.jpg"
+    mask_suffix: "*.png"
+
+# Training configuration
+training:
+  accelerator: auto
+  deterministic: false
+  devices: 1
+  early_stopping: true
+  experiment_name: color_image_segmentation
+  export_onnx: false  
+  input_height: 256
+  input_width: 256
+  log_every_n_steps: 10
+  max_epochs: 50
+  monitor: val/val_loss
+  monitor_mode: min
+  output_dir: outputs
+  patience: 10
+  precision: 16-mixed
+  save_top_k: 3

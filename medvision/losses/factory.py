@@ -10,12 +10,13 @@ from .combined import CombinedLoss
 from .crossentropy import CrossEntropyLoss, WeightedCrossEntropyLoss
 
 
-def get_loss_function(config: Dict[str, Any]) -> Callable:
+def get_loss_function(config: Dict[str, Any], num_classes: int = None) -> Callable:
     """
     Factory function to create loss function based on configuration.
     
     Args:
         config: Loss configuration dictionary
+        num_classes: Number of classes for automatic one-hot encoding
         
     Returns:
         Loss function
@@ -29,7 +30,7 @@ def get_loss_function(config: Dict[str, Any]) -> Callable:
             smooth = float(smooth)
         return DiceLoss(
             smooth=smooth,
-            reduction=config.get("reduction", "mean")
+            reduction=config.get("reduction", "mean"),
         )
     elif loss_type == "focal":
         alpha = config.get("alpha", 0.25)
@@ -42,7 +43,8 @@ def get_loss_function(config: Dict[str, Any]) -> Callable:
         return FocalLoss(
             alpha=alpha,
             gamma=gamma,
-            reduction=config.get("reduction", "mean")
+            reduction=config.get("reduction", "mean"),
+            num_classes=num_classes
         )
     elif loss_type == "bce":
         return nn.BCEWithLogitsLoss(
@@ -57,7 +59,8 @@ def get_loss_function(config: Dict[str, Any]) -> Callable:
             weight=weight,
             ignore_index=config.get("ignore_index", -100),
             reduction=config.get("reduction", "mean"),
-            label_smoothing=config.get("label_smoothing", 0.0)
+            label_smoothing=config.get("label_smoothing", 0.0),
+            num_classes=num_classes
         )
     elif loss_type == "weighted_ce" or loss_type == "weighted_crossentropy":
         class_weights = config.get("class_weights", None)
@@ -74,7 +77,7 @@ def get_loss_function(config: Dict[str, Any]) -> Callable:
         weights = []
         
         for loss_config in config["losses"]:
-            sub_loss = get_loss_function(loss_config)
+            sub_loss = get_loss_function(loss_config, num_classes=num_classes)
             weight = loss_config.get("weight", 1.0)
             if isinstance(weight, str):
                 weight = float(weight)

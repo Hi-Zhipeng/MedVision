@@ -1,6 +1,7 @@
 """Intersection over Union (IoU) metric for medical image segmentation."""
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 
@@ -37,21 +38,11 @@ class IoU:
         Returns:
             Tensor: Mean IoU or per-class IoU depending on `per_class`
         """
-        is_3d = inputs.dim() == 5
-
         # Convert logits to probabilities
         probs = torch.sigmoid(inputs) if inputs.size(1) == 1 else F.softmax(inputs, dim=1)
         preds = (probs > self.threshold).float()
 
-        # Convert targets to one-hot if needed
-        if targets.dim() == inputs.dim() - 1:
-            targets = targets.unsqueeze(1)
-        if targets.size(1) != inputs.size(1):
-            num_classes = inputs.size(1)
-            targets = F.one_hot(targets.long(), num_classes=num_classes)
-            targets = targets.permute(0, 4, 1, 2, 3) if is_3d else targets.permute(0, 3, 1, 2)
-
-        targets = targets.float()
+        targets = nn.functional.one_hot(targets.long(), num_classes=inputs.size(1)).permute(0, 3, 1, 2).float() if targets.dim() == 3 else nn.functional.one_hot(targets.long(), num_classes=inputs.size(1)).permute(0, 4, 1, 2, 3).float()
 
         # Flatten spatial dimensions
         preds_flat = preds.view(preds.size(0), preds.size(1), -1)

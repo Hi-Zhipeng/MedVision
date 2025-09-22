@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "medvision-segmentation"
-version = "0.2.3"
+version = "0.2.5"
 description = "A medical image segmentation framework based on PyTorch Lightning"
 readme = "README.md"
 license = {file = "LICENSE"}

@@ -60,7 +60,7 @@ class SegmentationModel(pl.LightningModule):
         self.net = self._create_network()
         
         # Get loss function
-        self.loss_fn = get_loss_function(config["loss"])
+        self.loss_fn = get_loss_function(config["loss"], num_classes=config.get("out_channels", 1))
         
         # Get metrics
         self.metrics = get_metrics(config.get("metrics", {}))
@@ -332,7 +332,7 @@ class SegmentationModel(pl.LightningModule):
             Validation dictionary
         """
         images, masks = batch
-
+       
         logits = self(images)
         loss = self.loss_fn(logits, masks)
         
@@ -343,7 +343,7 @@ class SegmentationModel(pl.LightningModule):
         for metric_name, metric_fn in self.metrics.items():
             metric_value = metric_fn(logits, masks)
             self.log(f"val/val_{metric_name}", metric_value, on_step=False, on_epoch=True, sync_dist=True)
-        
+     
         return {"val_loss": loss}
     
     def test_step(self, batch, batch_idx):
@@ -371,7 +371,7 @@ class SegmentationModel(pl.LightningModule):
             metric_value = metric_fn(logits, masks)
             self.log(f"test/test_{metric_name}", metric_value, on_step=False, on_epoch=True, sync_dist=True)
             results[f"test_{metric_name}"] = metric_value
-        
+
         return results
     
     def predict_step(self, batch, batch_idx):

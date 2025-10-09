@@ -6,7 +6,7 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import segmentation_models_pytorch as smp
-
+import matplotlib.pyplot as plt
 from torch.optim import Adam, SGD
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR
 
@@ -276,7 +276,7 @@ class SegmentationModel(pl.LightningModule):
                 "optimizer": optimizer,
                 "lr_scheduler": {
                     "scheduler": scheduler,
-                    "monitor": scheduler_config.get("monitor", "val_loss"),
+                    "monitor": scheduler_config.get("monitor", "val/val_loss"),
                 },
             }
         elif scheduler_type == "cosine":
@@ -332,7 +332,7 @@ class SegmentationModel(pl.LightningModule):
             Validation dictionary
         """
         images, masks = batch
-       
+        
         logits = self(images)
         loss = self.loss_fn(logits, masks)
         
@@ -342,8 +342,9 @@ class SegmentationModel(pl.LightningModule):
         # Calculate metrics - let the metric functions handle dimension compatibility
         for metric_name, metric_fn in self.metrics.items():
             metric_value = metric_fn(logits, masks)
+            print(f"Val Metric - {metric_name}: {metric_value.item()}")
             self.log(f"val/val_{metric_name}", metric_value, on_step=False, on_epoch=True, sync_dist=True)
-     
+
         return {"val_loss": loss}
     
     def test_step(self, batch, batch_idx):
@@ -361,7 +362,7 @@ class SegmentationModel(pl.LightningModule):
 
         logits = self(images)
         loss = self.loss_fn(logits, masks)
-        
+
         # Log metrics
         self.log("test/test_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
         results = {"test_loss": loss}
@@ -369,9 +370,10 @@ class SegmentationModel(pl.LightningModule):
         # Calculate metrics - let the metric functions handle dimension compatibility
         for metric_name, metric_fn in self.metrics.items():
             metric_value = metric_fn(logits, masks)
+            print(f"Test Metric - {metric_name}: {metric_value.item()}")
             self.log(f"test/test_{metric_name}", metric_value, on_step=False, on_epoch=True, sync_dist=True)
             results[f"test_{metric_name}"] = metric_value
-
+            
         return results
     
     def predict_step(self, batch, batch_idx):

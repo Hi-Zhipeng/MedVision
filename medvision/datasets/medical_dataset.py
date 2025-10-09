@@ -122,11 +122,14 @@ class MedicalImageDataset(Dataset):
 
 
         # 加载掩码（如果可用）
-        if self.mode != "test" and self.mask_files[idx] is not None:
+        if self.mode != "predict" and self.mask_files[idx] is not None:
             mask_path = self.mask_files[idx]
             mask = self.mask_loader(mask_path)
         else:
             # 创建空掩码
+            print("*"*20)
+            print("mask is None!")
+            print("*"*20)
             mask = torch.zeros_like(image)
 
         # 应用变换

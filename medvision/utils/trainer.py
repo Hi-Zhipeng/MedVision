@@ -35,7 +35,7 @@ def train_model(config: Dict[str, Any]) -> None:
     
     # Configure callbacks
     callbacks = []
-    
+
     checkpoint_callback = ModelCheckpoint(
         dirpath=os.path.join(config["training"]["output_dir"], "checkpoints"),
         filename=f"{config['training'].get('experiment_name')}",
@@ -44,6 +44,7 @@ def train_model(config: Dict[str, Any]) -> None:
         save_top_k=config["training"].get("save_top_k", 1),
         save_last=False,
     )
+
     callbacks.append(checkpoint_callback)
     
     # EarlyStopping callback
@@ -106,7 +107,6 @@ def train_model(config: Dict[str, Any]) -> None:
     train_results = trainer.logged_metrics
 
     test_results = trainer.test(model, datamodule=datamodule)
-    
     
     print(f"Training completed. Model checkpoints saved at: {checkpoint_callback.dirpath}")
     print(f"Best model path: {checkpoint_callback.best_model_path}")

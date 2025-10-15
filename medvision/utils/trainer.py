@@ -4,15 +4,85 @@ Training module for MedVision.
 
 import os
 import torch
+import json
 from typing import Dict, Any
 from pathlib import Path
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
-
+from pytorch_lightning.utilities import rank_zero_only
 from medvision.models import get_model
 from medvision.datasets import get_datamodule
 from medvision.utils.onnx_utils import convert_models_to_onnx, generate_triton_config
+
+
+import os
+import json
+import torch
+from pytorch_lightning.utilities import rank_zero_only
+
+
+@rank_zero_only
+def convert_to_onnx_if_needed(checkpoint_callback, model, datamodule, config):
+    convert_flag = config["training"].get(
+        "convert_to_onnx", config["training"].get("export_onnx", False)
+    )
+    if not convert_flag:
+        return [], None
+
+    print("\n" + "=" * 50)
+    print("Converting models to ONNX format...")
+    print("=" * 50)
+
+    try:
+        converted_models, onnx_dir = convert_models_to_onnx(
+            checkpoint_callback, model.__class__, config["model"], datamodule
+        )
+        print(f"\n✓ ONNX conversion completed!")
+        print(f"✓ Saved to: {onnx_dir}")
+        print(f"✓ {len(converted_models)} models converted.")
+    except Exception as e:
+        print(f"❌ ONNX conversion failed: {e}")
+        converted_models, onnx_dir = [], None
+
+    print("=" * 50 + "\n")
+    return converted_models, onnx_dir
+
+
+@rank_zero_only
+def save_training_results(trainer, checkpoint_callback, test_results, converted_models, onnx_dir, config):
+    train_results = trainer.logged_metrics
+    train_val_metrics = {
+        k: float(v)
+        for k, v in train_results.items()
+        if isinstance(v, torch.Tensor)
+        and (k.startswith("val/") or k.startswith("train/"))
+    }
+    test_metrics = {k: float(v) for k, v in test_results[0].items()} if test_results else {}
+
+    final_metrics = {
+        "train_val_metrics": train_val_metrics,
+        "test_metrics": test_metrics,
+        "best_model_path": checkpoint_callback.best_model_path,
+        "best_model_score": float(checkpoint_callback.best_model_score)
+        if checkpoint_callback.best_model_score is not None
+        else None,
+        "monitor": config["training"].get("monitor", "val_loss"),
+    }
+
+    if converted_models:
+        final_metrics["onnx_conversion"] = {
+            "converted_count": len(converted_models),
+            "onnx_directory": onnx_dir,
+            "models": converted_models,
+        }
+
+    result_path = os.path.join(config["training"]["output_dir"], "results.json")
+    with open(result_path, "w") as f:
+        json.dump(final_metrics, f, indent=4)
+    print(f"Final metrics saved to: {result_path}")
+
+
 
 
 def train_model(config: Dict[str, Any]) -> None:
@@ -74,80 +144,20 @@ def train_model(config: Dict[str, Any]) -> None:
         logger=logger,
         log_every_n_steps=config["training"].get("log_every_n_steps", 10),
         deterministic=config["training"].get("deterministic", False),
-        gradient_clip_val=config["training"].get("gradient_clip_val", 0.0)
+        gradient_clip_val=config["training"].get("gradient_clip_val", 0.0),
+        check_val_every_n_epoch=config["training"].get("check_val_every_n_epoch", 1)
+        
     )
-    
-    # Train the model
+
     trainer.fit(model, datamodule=datamodule)
 
-    # 保留最好的Top k模型后，进行模型转换
-    convert_to_onnx = config["training"].get("convert_to_onnx", config["training"].get("export_onnx", False))
-    converted_models = []
-    onnx_dir = None
-    
-    if convert_to_onnx:
-        print("\n" + "="*50)
-        print("Converting models to ONNX format...")
-        print("="*50)
-        try:
-            converted_models, onnx_dir = convert_models_to_onnx(
-                checkpoint_callback, 
-                model.__class__, 
-                config["model"], 
-                datamodule
-            )
-            print(f"\n✓ ONNX conversion completed!")
-            print(f"✓ ONNX models saved to: {onnx_dir}")
-            print(f"✓ Successfully converted {len(converted_models)} models to ONNX format")
-        except Exception as e:
-            print(f"❌ ONNX conversion failed: {str(e)}")
-        print("="*50 + "\n")
-    
-
-    train_results = trainer.logged_metrics
+    converted_models, onnx_dir = (convert_to_onnx_if_needed(
+        checkpoint_callback, model, datamodule, config
+    ) or ([], None))
 
     test_results = trainer.test(model, datamodule=datamodule)
-    
-    print(f"Training completed. Model checkpoints saved at: {checkpoint_callback.dirpath}")
-    print(f"Best model path: {checkpoint_callback.best_model_path}")
-    print(f"Best model score: {checkpoint_callback.best_model_score:.4f}")
 
-
-    save_metrics = config["training"].get("save_metrics", True)
-    if save_metrics:
-        import json
-
-        # 过滤 callback_metrics，只保留 train/val 部分
-        train_val_metrics = {
-            k: float(v) for k, v in train_results.items()
-            if isinstance(v, torch.Tensor) and (k.startswith("val/") or k.startswith("train/"))
-        }
-
-        # 处理 test 结果
-        test_metrics = {
-            k: float(v) for k, v in test_results[0].items()
-        } if test_results else {}
-
-        # 汇总并保存
-        final_metrics = {
-            "train_val_metrics": train_val_metrics,
-            "test_metrics": test_metrics,
-            "best_model_path": checkpoint_callback.best_model_path,
-            "best_model_score": float(checkpoint_callback.best_model_score)
-                if checkpoint_callback.best_model_score is not None else None,
-            "monitor": config["training"].get("monitor", "val_loss"),
-        }
-        
-        # 添加ONNX转换信息
-        if convert_to_onnx and converted_models:
-            final_metrics["onnx_conversion"] = {
-                "converted_count": len(converted_models),
-                "onnx_directory": onnx_dir,
-                "models": converted_models
-            }
-
-        result_path = os.path.join(config["training"]["output_dir"], "results.json")
-        with open(result_path, "w") as f:
-            json.dump(final_metrics, f, indent=4)
-
-        print(f"Final metrics saved to: {result_path}")
+    if config["training"].get("save_metrics", True):
+        save_training_results(
+            trainer, checkpoint_callback, test_results, converted_models, onnx_dir, config
+        )

@@ -10,7 +10,7 @@ model:
   in_channels: 1
   out_channels: 3
   features: [32, 64, 128, 256]
-  dropout: 0.1
+  dropout: 0.0
   loss:
     type: "dice"
     smooth: 0.00001
@@ -39,7 +39,7 @@ model:
 data:
   type: "medical"
   batch_size: 1
-  num_workers: 4
+  num_workers: 32
   data_dir: "data/3D copy"
   # train_val_split: [0.8, 0.2]
   dataset_args:  
@@ -128,11 +128,12 @@ data:
     #   keys: ["image"]
     #   nonzero: true
     #   channel_wise: false
+
   val_transforms:
     # 验证时只做基础预处理
     Resized:
       keys: ["image", "label"]
-      spatial_size: [128, 128, 128]
+      spatial_size: [256, 256, 256]
       mode: ["bilinear", "nearest"]
       align_corners: [false, null]    
 #     NormalizeIntensityd:
@@ -144,7 +145,7 @@ data:
 #     # 测试时只做基础预处理
     Resized:
       keys: ["image", "label"]
-      spatial_size: [128, 128, 128]
+      spatial_size: [256, 256, 256]
       mode: ["bilinear", "nearest"]
       align_corners: [false, null]    
     
@@ -156,17 +157,18 @@ data:
 # Training configuration
 training:
   max_epochs: 40
-  devices: 1
+  devices: 3
   accelerator: "auto"
   precision: 16-mixed 
   output_dir: "outputs"
-  experiment_name: "brain_tumor_segmentation"
+  experiment_name: "3d_test"
   monitor: "val/val_dice"  #`train/train_loss`, `train/train_loss_step`, `val/val_loss`, `val/val_dice`, `val/val_iou`, `train/train_loss_epoch`, `train/train_dice`, `train/train_iou`
   monitor_mode: "max"
   # early_stopping: true
   patience: 100
   save_top_k: 1
-  log_every_n_steps: 10
+  log_every_n_steps: 100
   deterministic: false
   export_onnx: true
+  check_val_every_n_epoch: 1
 

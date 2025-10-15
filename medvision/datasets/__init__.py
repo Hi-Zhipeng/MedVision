@@ -120,6 +120,7 @@ class ColorImageDataModule(pl.LightningDataModule):
             num_workers=self.num_workers,
             pin_memory=self.pin_memory,
             drop_last=True,
+            persistent_workers=True if self.num_workers > 0 else False
         )
     
     def val_dataloader(self):
@@ -135,6 +136,7 @@ class ColorImageDataModule(pl.LightningDataModule):
             shuffle=False,
             num_workers=self.num_workers,
             pin_memory=self.pin_memory,
+            persistent_workers=True if self.num_workers > 0 else False
         )
     
     def test_dataloader(self):
@@ -150,6 +152,7 @@ class ColorImageDataModule(pl.LightningDataModule):
             shuffle=False,
             num_workers=self.num_workers,
             pin_memory=self.pin_memory,
+            persistent_workers=True if self.num_workers > 0 else False
         )
 
 

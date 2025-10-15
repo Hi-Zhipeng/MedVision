@@ -5,40 +5,38 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DiceLoss(nn.Module):
-    def __init__(self, smooth=1e-6, reduction='mean', ignore_index=0):
+    def __init__(self, smooth=1e-6, reduction='mean', ignore_index=-1):
         super().__init__()
         self.smooth = smooth
         self.reduction = reduction
-        self.ignore_index = ignore_index  
+        self.ignore_index = ignore_index
 
     def forward(self, inputs, targets):
-        if inputs.size(1) == 1:
-            inputs = torch.sigmoid(inputs)
+        probs = torch.sigmoid(inputs) if inputs.size(1) == 1 else F.softmax(inputs, dim=1)
+        num_classes = probs.size(1)
+
+        if targets.dim() == 3:
+            targets = F.one_hot(targets.long(), num_classes).permute(0, 3, 1, 2).float()
         else:
-            inputs = F.softmax(inputs, dim=1)
+            targets = F.one_hot(targets.long(), num_classes).permute(0, 4, 1, 2, 3).float()
 
-        if targets.dim() == 3:  # [B,H,W]
-            targets = F.one_hot(targets.long(), num_classes=inputs.size(1)).permute(0, 3, 1, 2).float()
-        else:  # [B,D,H,W]
-            targets = F.one_hot(targets.long(), num_classes=inputs.size(1)).permute(0, 4, 1, 2, 3).float()
+        if probs.shape != targets.shape:
+            raise ValueError(f"Shape mismatch: {probs.shape} vs {targets.shape}")
 
-        assert inputs.shape == targets.shape, f"Shape mismatch: {inputs.shape} vs {targets.shape}"
+        probs = probs.flatten(2)
+        targets = targets.flatten(2)
 
-        inputs = inputs.view(inputs.size(0), inputs.size(1), -1)
-        targets = targets.view(targets.size(0), targets.size(1), -1)
+        intersection = (probs * targets).sum(dim=2)
+        union = probs.sum(dim=2) + targets.sum(dim=2)
+        dice = (2 * intersection + self.smooth) / (union + self.smooth)
 
-        intersection = (inputs * targets).sum(dim=2)
-        union = inputs.sum(dim=2) + targets.sum(dim=2)
-        dice = (2. * intersection + self.smooth) / (union + self.smooth)
+        if 0 <= self.ignore_index < dice.size(1):
+            dice = dice[:, [i for i in range(dice.size(1)) if i != self.ignore_index]]
 
-        mask = torch.ones(dice.size(1), device=dice.device, dtype=torch.bool)
-        mask[self.ignore_index] = False
-        dice = dice[:, mask]
         loss = 1 - dice
 
         if self.reduction == 'mean':
             return loss.mean()
         elif self.reduction == 'sum':
             return loss.sum()
-        else:
-            return loss
+        return loss

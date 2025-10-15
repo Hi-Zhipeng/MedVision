@@ -6,7 +6,6 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import segmentation_models_pytorch as smp
-import matplotlib.pyplot as plt
 from torch.optim import Adam, SGD
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR
 
@@ -342,7 +341,7 @@ class SegmentationModel(pl.LightningModule):
         # Calculate metrics - let the metric functions handle dimension compatibility
         for metric_name, metric_fn in self.metrics.items():
             metric_value = metric_fn(logits, masks)
-            print(f"Val Metric - {metric_name}: {metric_value.item()}")
+            print(f"Validation {metric_name}: {metric_value}")
             self.log(f"val/val_{metric_name}", metric_value, on_step=False, on_epoch=True, sync_dist=True)
 
         return {"val_loss": loss}
@@ -370,10 +369,9 @@ class SegmentationModel(pl.LightningModule):
         # Calculate metrics - let the metric functions handle dimension compatibility
         for metric_name, metric_fn in self.metrics.items():
             metric_value = metric_fn(logits, masks)
-            print(f"Test Metric - {metric_name}: {metric_value.item()}")
             self.log(f"test/test_{metric_name}", metric_value, on_step=False, on_epoch=True, sync_dist=True)
             results[f"test_{metric_name}"] = metric_value
-            
+
         return results
     
     def predict_step(self, batch, batch_idx):

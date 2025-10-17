@@ -13,7 +13,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.utilities import rank_zero_only
 from medvision.models import get_model
 from medvision.datasets import get_datamodule
-from medvision.utils.onnx_utils import convert_models_to_onnx, generate_triton_config
+from medvision.utils.onnx_utils import convert_models_to_onnx
 
 
 import os
@@ -137,8 +137,9 @@ def train_model(config: Dict[str, Any]) -> None:
     # Create trainer
     trainer = pl.Trainer(
         max_epochs=config["training"].get("max_epochs", 100),
-        devices=config["training"].get("devices", None),
-        accelerator=config["training"].get("accelerator", "auto"),
+        devices=config["training"].get("devices", 'auto'),
+        accelerator=config["training"].get("accelerator", "gpu"),
+        strategy=config["training"].get("strategy", 'ddp'),
         precision=config["training"].get("precision", 32),
         callbacks=callbacks,
         logger=logger,

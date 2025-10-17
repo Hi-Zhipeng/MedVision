@@ -38,7 +38,7 @@ model:
 # Data configuration
 data:
   type: "medical"
-  batch_size: 1
+  batch_size: 2
   num_workers: 32
   data_dir: "data/3D copy"
   # train_val_split: [0.8, 0.2]
@@ -157,7 +157,7 @@ data:
 # Training configuration
 training:
   max_epochs: 40
-  devices: 3
+  devices: [3]
   accelerator: "auto"
   precision: 16-mixed 
   output_dir: "outputs"

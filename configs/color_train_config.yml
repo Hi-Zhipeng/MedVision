@@ -9,7 +9,7 @@ model:
   network:
     name: "unet"
   in_channels: 3
-  out_channels: 4  
+  out_channels: 4
   features: [32, 64, 128, 256]
   dropout: 0.1
   loss:
@@ -36,21 +36,46 @@ model:
 data:
   type: "color" 
   data_dir: "Dataset"
-  batch_size: 4 
-  num_workers: 2
+  batch_size: 16
+  num_workers: 16
   pin_memory: true
-  train_val_split: [0.8, 0.2]
+
   dataset_args:
     image_subdir: "image"
     mask_subdir: "label"
     image_suffix: "*.jpg"
     mask_suffix: "*.png"
 
-# Training configuration
+  train_transforms:
+    Compose:
+      - Resize:
+          size: [720, 1280]
+      - ToTensor: {}
+      - Normalize:
+          mean: [0.485, 0.456, 0.406]
+          std: [0.229, 0.224, 0.225]
+
+  val_transforms:
+    Compose:
+      - Resize:
+          size: [720, 1280]
+      - ToTensor: {}
+      - Normalize:
+          mean: [0.485, 0.456, 0.406]
+          std: [0.229, 0.224, 0.225]
+
+  test_transforms:
+    Compose:
+      - Resize:
+          size: [720, 1280]
+      - ToTensor: {}
+      - Normalize:
+          mean: [0.485, 0.456, 0.406]
+          std: [0.229, 0.224, 0.225]
 training:
   accelerator: auto
   deterministic: false
-  devices: 1
+  devices: -1
   early_stopping: true
   experiment_name: color_image_segmentation
   export_onnx: false  

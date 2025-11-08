@@ -2,6 +2,7 @@
 
 import os
 import torch
+import json
 from typing import Dict, Any, Optional, List, Tuple, Union
 import pytorch_lightning as pl
 from torch.utils.data import Dataset, DataLoader, random_split
@@ -105,7 +106,40 @@ class ColorImageDataModule(pl.LightningDataModule):
                 mode="test",
                 **self.config.get("dataset_args", {})
             )
-            
+        self._log_dataset_summary()
+
+    def _log_dataset_summary(self):
+        """
+        Log dataset summary information.
+        """
+
+        save_path = os.path.join(self.data_dir, "dataset_stats.json")
+
+        if os.path.exists(save_path):
+            with open(save_path, "r", encoding="utf-8") as f:
+                stats = json.load(f)
+        else:
+            stats = {}
+
+        updated = False
+
+        if self.train_dataset is not None and "train_samples" not in stats:
+            stats["train_samples"] = len(self.train_dataset)
+            updated = True
+        if self.val_dataset is not None and "val_samples" not in stats:
+            stats["val_samples"] = len(self.val_dataset)
+            updated = True
+        if self.test_dataset is not None and "test_samples" not in stats:
+            stats["test_samples"] = len(self.test_dataset)
+            updated = True
+
+        if updated:
+            with open(save_path, "w", encoding="utf-8") as f:
+                json.dump(stats, f, indent=4, ensure_ascii=False)
+            print(f"[INFO] Dataset summary updated at {save_path}")
+        else:
+            print(f"[INFO] Dataset summary already complete at {save_path}")
+
     def train_dataloader(self):
         """
         Create training dataloader.
@@ -226,7 +260,41 @@ class MedicalDataModule(pl.LightningDataModule):
                 mode="test",
                 **self.config.get("dataset_args", {})
             )
-            
+        self._log_dataset_summary()
+
+    def _log_dataset_summary(self):
+        """
+        Log dataset summary information.
+        """
+
+        save_path = os.path.join(self.data_dir, "dataset_stats.json")
+
+        if os.path.exists(save_path):
+            with open(save_path, "r", encoding="utf-8") as f:
+                stats = json.load(f)
+        else:
+            stats = {}
+
+        updated = False
+
+        if self.train_dataset is not None and "train_samples" not in stats:
+            stats["train_samples"] = len(self.train_dataset)
+            updated = True
+        if self.val_dataset is not None and "val_samples" not in stats:
+            stats["val_samples"] = len(self.val_dataset)
+            updated = True
+        if self.test_dataset is not None and "test_samples" not in stats:
+            stats["test_samples"] = len(self.test_dataset)
+            updated = True
+
+        if updated:
+            with open(save_path, "w", encoding="utf-8") as f:
+                json.dump(stats, f, indent=4, ensure_ascii=False)
+            print(f"[INFO] Dataset summary updated at {save_path}")
+        else:
+            print(f"[INFO] Dataset summary already complete at {save_path}")
+
+
     def train_dataloader(self):
         """
         Create training dataloader.

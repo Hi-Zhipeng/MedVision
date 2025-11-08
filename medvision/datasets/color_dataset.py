@@ -130,7 +130,7 @@ class ColorImageDataset(Dataset):
         Returns:
             PIL Image in grayscale format
         """
-        mask = Image.open(path).convert('L')  # Convert to grayscale
+        mask = Image.open(path).convert('L')
         return mask
 
     def __len__(self):
@@ -189,11 +189,13 @@ class ColorImageDataset(Dataset):
                 if isinstance(mask, Image.Image):
                     mask = torch.from_numpy(np.array(mask)).long()
 
-        # 如果没有应用变换，确保转换为tensor
+                # 如果没有应用变换，确保转换为tensor
         else:
             if isinstance(image, Image.Image):
                 image = torch.from_numpy(np.array(image)).float().permute(2, 0, 1) / 255.0
             if isinstance(mask, Image.Image):
                 mask = torch.from_numpy(np.array(mask)).long()
+
+        return image, mask
 
         return image, mask

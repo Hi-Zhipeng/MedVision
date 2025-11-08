@@ -68,14 +68,6 @@ class MedicalImageDataset(Dataset):
         # Loaders
         self.image_loader = image_loader or load_image
         self.mask_loader = mask_loader or load_image
-        
-        # Get file paths
-        # Make directory if it doesn't exist
-        try:
-            os.makedirs(self.image_dir, exist_ok=True)
-            os.makedirs(self.mask_dir, exist_ok=True)
-        except Exception as e:
-            print(f"警告: 无法创建数据目录: {e}")
             
         self.image_files = sorted(glob.glob(str(self.image_dir / image_suffix)))
         

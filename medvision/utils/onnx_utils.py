@@ -103,7 +103,7 @@ def convert_models_to_onnx(
         Tuple[List[Dict], str]: 转换成功的模型列表和ONNX目录路径
     """
     # 配置参数
-    opset_version = config.get("onnx_opset_version", 11)
+    opset_version = config.get("onnx_opset_version", 18)
     
     checkpoint_dir = checkpoint_callback.dirpath
     onnx_dir = os.path.join(os.path.dirname(checkpoint_dir), "onnx_models")
@@ -174,7 +174,8 @@ def convert_models_to_onnx(
                         'input': {0: 'batch_size'},
                         'output': {0: 'batch_size'}
                     },
-                    verbose=False
+                    verbose=False,
+                    external_data=False
                 )
             
             # 验证ONNX模型
@@ -270,7 +271,7 @@ def convert_single_model_to_onnx(
     config: Dict[str, Any],
     sample_input: torch.Tensor,
     output_path: str,
-    opset_version: int = 11
+    opset_version: int = 18
 ) -> Dict[str, Any]:
     """
     将单个模型转换为ONNX格式

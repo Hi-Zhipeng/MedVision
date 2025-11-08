@@ -341,7 +341,6 @@ class SegmentationModel(pl.LightningModule):
         # Calculate metrics - let the metric functions handle dimension compatibility
         for metric_name, metric_fn in self.metrics.items():
             metric_value = metric_fn(logits, masks)
-            print(f"Validation {metric_name}: {metric_value}")
             self.log(f"val/val_{metric_name}", metric_value, on_step=False, on_epoch=True, sync_dist=True)
 
         return {"val_loss": loss}

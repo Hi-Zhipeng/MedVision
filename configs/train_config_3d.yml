@@ -38,13 +38,13 @@ model:
 # Data configuration
 data:
   type: "medical"
-  batch_size: 2
+  batch_size: 1
   num_workers: 32
-  data_dir: "data/3D copy"
+  data_dir: "LITS2017"
   # train_val_split: [0.8, 0.2]
   dataset_args:  
-    image_subdir: "images" 
-    mask_subdir: "masks"
+    image_subdir: "image" 
+    mask_subdir: "label"
     image_suffix: "*.nii"  
     mask_suffix: "*.nii" 
 
@@ -156,12 +156,12 @@ data:
       
 # Training configuration
 training:
-  max_epochs: 40
-  devices: [3]
+  max_epochs: 2
+  devices: [0]
   accelerator: "auto"
   precision: 16-mixed 
   output_dir: "outputs"
-  experiment_name: "3d_test"
+  experiment_name: "brain_tumor_segmentation"
   monitor: "val/val_dice"  #`train/train_loss`, `train/train_loss_step`, `val/val_loss`, `val/val_dice`, `val/val_iou`, `train/train_loss_epoch`, `train/train_dice`, `train/train_iou`
   monitor_mode: "max"
   # early_stopping: true

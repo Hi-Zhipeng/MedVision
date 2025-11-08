@@ -47,13 +47,17 @@ def test_model(config: Dict[str, Any]) -> None:
     )
     
     # Test the model
-    results = trainer.test(model, datamodule=datamodule)
+    result_dict = trainer.test(model, datamodule=datamodule)
     
     # Save results if output directory is specified
     if "output_dir" in config["testing"]:
+        import json
         output_dir = Path(config["testing"]["output_dir"])
         output_dir.mkdir(parents=True, exist_ok=True)
-        
+
+        out_path = output_dir / "results.json"
+        with out_path.open("w", encoding="utf-8") as f:
+            json.dump(result_dict, f, ensure_ascii=False, indent=2)
         # Here you would implement saving of predictions, visualizations, etc.
         print(f"Results saved to: {output_dir}")
     

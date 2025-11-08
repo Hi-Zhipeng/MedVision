@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "medvision-segmentation"
-version = "0.3.2"
+version = "0.3.8"
 description = "A medical image segmentation framework based on PyTorch Lightning"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -39,6 +39,7 @@ dependencies = [
     "pillow>=9.0.0",
     "scikit-image>=0.19.0",
     "pandas>=1.4.0",
+    "onnxscript"
 ]
 
 [project.optional-dependencies]
@@ -105,6 +106,8 @@ all = [
     "hausdorff>=0.2.6",   
     "onnx>=1.12.0",
     "onnxruntime>=1.12.0",
+    "onnxscript==0.5.4",
+    "segmentation_models_pytorch"
 ]
 
 [project.scripts]

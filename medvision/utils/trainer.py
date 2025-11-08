@@ -5,6 +5,7 @@ Training module for MedVision.
 import os
 import torch
 import json
+import shutil
 from typing import Dict, Any
 from pathlib import Path
 import pytorch_lightning as pl
@@ -50,8 +51,8 @@ def convert_to_onnx_if_needed(checkpoint_callback, model, datamodule, config):
 
 
 @rank_zero_only
-def save_training_results(trainer, checkpoint_callback, test_results, converted_models, onnx_dir, config):
-    train_results = trainer.logged_metrics
+def save_training_results(train_val_results, checkpoint_callback, test_results, converted_models, onnx_dir, config):
+    train_results = train_val_results
     train_val_metrics = {
         k: float(v)
         for k, v in train_results.items()
@@ -82,7 +83,24 @@ def save_training_results(trainer, checkpoint_callback, test_results, converted_
         json.dump(final_metrics, f, indent=4)
     print(f"Final metrics saved to: {result_path}")
 
+@rank_zero_only
+def merge_into_results(dataset_stats_path, results_path):
+    with open(dataset_stats_path, "r") as f:
+        data1 = json.load(f)
+    with open(results_path, "r") as f:
+        data2 = json.load(f)
 
+    if isinstance(data1, dict) and isinstance(data2, dict):
+        merged = {**data1, **data2}  # results.json 的字段覆盖 dataset_stats.json
+    elif isinstance(data1, list) and isinstance(data2, list):
+        merged = data1 + data2
+    else:
+        raise ValueError("JSON types do not match or are unsupported")
+
+    with open(results_path, "w") as f:
+        json.dump(merged, f, indent=2)
+
+    return results_path
 
 
 def train_model(config: Dict[str, Any]) -> None:
@@ -151,6 +169,7 @@ def train_model(config: Dict[str, Any]) -> None:
     )
 
     trainer.fit(model, datamodule=datamodule)
+    train_results = trainer.logged_metrics
 
     converted_models, onnx_dir = (convert_to_onnx_if_needed(
         checkpoint_callback, model, datamodule, config
@@ -160,5 +179,9 @@ def train_model(config: Dict[str, Any]) -> None:
 
     if config["training"].get("save_metrics", True):
         save_training_results(
-            trainer, checkpoint_callback, test_results, converted_models, onnx_dir, config
+            train_results, checkpoint_callback, test_results, converted_models, onnx_dir, config
         )
+
+    # move dataset summary logging to outputs dir and merge with results.json
+    merged_file = merge_into_results(os.path.join(config['data']['data_dir'], "dataset_stats.json"), os.path.join(config["training"]["output_dir"], "results.json"))
+    print(f"Merged JSON saved to {merged_file}")

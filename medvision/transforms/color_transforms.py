@@ -134,7 +134,4 @@ class ColorImageTransform:
         # 如果 image 还是 PIL（用户未包含 ToTensor），把它转换
         if not isinstance(img, torch.Tensor):
             img = T.ToTensor()(img)
-
-        print(f"Transformed image shape: {img.shape}, mask shape: {mask_tensor.shape}")
-
         return {"image": img, "mask": mask_tensor}

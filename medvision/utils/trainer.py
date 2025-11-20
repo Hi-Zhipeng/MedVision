@@ -165,7 +165,6 @@ def train_model(config: Dict[str, Any]) -> None:
         deterministic=config["training"].get("deterministic", False),
         gradient_clip_val=config["training"].get("gradient_clip_val", 0.0),
         check_val_every_n_epoch=config["training"].get("check_val_every_n_epoch", 1)
-        
     )
 
     trainer.fit(model, datamodule=datamodule)

@@ -124,7 +124,7 @@ class SegmentationModel(pl.LightningModule):
                 encoder_name=self.config.get("encoder_name", "resnet34"),
                 in_channels=self.config.get("in_channels", 3),
                 classes=self.config.get("out_channels", 1),
-                activation=self.config.get("activation", "sigmoid"),
+                activation=self.config.get("activation", None),
                 encoder_weights=self.config.get("encoder_weights", "imagenet"),
             )
         elif network_name == "fpn":
@@ -132,7 +132,7 @@ class SegmentationModel(pl.LightningModule):
                 encoder_name=self.config.get("encoder_name", "resnet34"),
                 in_channels=self.config.get("in_channels", 3),
                 classes=self.config.get("out_channels", 1),
-                activation=self.config.get("activation", "sigmoid"),
+                activation=self.config.get("activation", None),
                 encoder_weights=self.config.get("encoder_weights", "imagenet"),
             )
         elif network_name == "linknet":
@@ -140,7 +140,7 @@ class SegmentationModel(pl.LightningModule):
                 encoder_name=self.config.get("encoder_name", "resnet34"),
                 in_channels=self.config.get("in_channels", 3),
                 classes=self.config.get("out_channels", 1),
-                activation=self.config.get("activation", "sigmoid"),
+                activation=self.config.get("activation", "None"),
                 encoder_weights=self.config.get("encoder_weights", "imagenet"),
             )
         elif network_name == "pspnet":
@@ -148,7 +148,7 @@ class SegmentationModel(pl.LightningModule):
                 encoder_name=self.config.get("encoder_name", "resnet34"),
                 in_channels=self.config.get("in_channels", 3),
                 classes=self.config.get("out_channels", 1),
-                activation=self.config.get("activation", "sigmoid"),
+                activation=self.config.get("activation", None),
                 encoder_weights=self.config.get("encoder_weights", "imagenet"),
             )
         elif network_name == "deeplabv3":
@@ -156,7 +156,7 @@ class SegmentationModel(pl.LightningModule):
                 encoder_name=self.config.get("encoder_name", "resnet34"),
                 in_channels=self.config.get("in_channels", 3),
                 classes=self.config.get("out_channels", 1),
-                activation=self.config.get("activation", "sigmoid"),
+                activation=self.config.get("activation", None),
                 encoder_weights=self.config.get("encoder_weights", "imagenet"),
             )
         elif network_name == "deeplabv3+":
@@ -164,7 +164,7 @@ class SegmentationModel(pl.LightningModule):
                 encoder_name=self.config.get("encoder_name", "resnet34"),
                 in_channels=self.config.get("in_channels", 3),
                 classes=self.config.get("out_channels", 1),
-                activation=self.config.get("activation", "sigmoid"),
+                activation=self.config.get("activation", None),
                 encoder_weights=self.config.get("encoder_weights", "imagenet"),
             )
         elif network_name == "linknet":
@@ -172,7 +172,7 @@ class SegmentationModel(pl.LightningModule):
                 encoder_name=self.config.get("encoder_name", "resnet34"),
                 in_channels=self.config.get("in_channels", 3),
                 classes=self.config.get("out_channels", 1),
-                activation=self.config.get("activation", "sigmoid"),
+                activation=self.config.get("activation", None),
                 encoder_weights=self.config.get("encoder_weights", "imagenet"),
             )
         elif network_name == "manet":
@@ -180,7 +180,7 @@ class SegmentationModel(pl.LightningModule):
                 encoder_name=self.config.get("encoder_name", "resnet34"),
                 in_channels=self.config.get("in_channels", 3),
                 classes=self.config.get("out_channels", 1),
-                activation=self.config.get("activation", "sigmoid"),
+                activation=self.config.get("activation", None),
                 encoder_weights=self.config.get("encoder_weights", "imagenet"),
             )
         elif network_name == "pan":
@@ -188,7 +188,7 @@ class SegmentationModel(pl.LightningModule):
                 encoder_name=self.config.get("encoder_name", "resnet34"),
                 in_channels=self.config.get("in_channels", 3),
                 classes=self.config.get("out_channels", 1),
-                activation=self.config.get("activation", "sigmoid"),
+                activation=self.config.get("activation", None),
                 encoder_weights=self.config.get("encoder_weights", "imagenet"),
             )
         elif network_name == "upernet":
@@ -196,7 +196,7 @@ class SegmentationModel(pl.LightningModule):
                 encoder_name=self.config.get("encoder_name", "resnet34"),
                 in_channels=self.config.get("in_channels", 3),
                 classes=self.config.get("out_channels", 1),
-                activation=self.config.get("activation", "sigmoid"),
+                activation=self.config.get("activation", None),
                 encoder_weights=self.config.get("encoder_weights", "imagenet"),
             )
         elif network_name == "segformer":
@@ -204,7 +204,7 @@ class SegmentationModel(pl.LightningModule):
                 encoder_name=self.config.get("encoder_name", "resnet34"),
                 in_channels=self.config.get("in_channels", 3),
                 classes=self.config.get("out_channels", 1),
-                activation=self.config.get("activation", "sigmoid"),
+                activation=self.config.get("activation", None),
                 encoder_weights=self.config.get("encoder_weights", "imagenet"),
             )
         elif network_name == "dpt":
@@ -212,7 +212,7 @@ class SegmentationModel(pl.LightningModule):
                 encoder_name=self.config.get("encoder_name", "tu-resnet34"),
                 in_channels=self.config.get("in_channels", 3),
                 classes=self.config.get("out_channels", 1),
-                activation=self.config.get("activation", "sigmoid"),
+                activation=self.config.get("activation", None),
                 encoder_weights=self.config.get("encoder_weights", "imagenet"),
             )
         raise ValueError(f"Unknown model name: {network_name}")
@@ -281,8 +281,8 @@ class SegmentationModel(pl.LightningModule):
         elif scheduler_type == "cosine":
             scheduler = CosineAnnealingLR(
                 optimizer,
-                T_max=scheduler_config.get("T_max", 10),
-                eta_min=scheduler_config.get("eta_min", 0),
+                T_max=self.trainer.max_epochs,
+                eta_min=scheduler_config.get("eta_min", 0.0001),
             )
             return {
                 "optimizer": optimizer,

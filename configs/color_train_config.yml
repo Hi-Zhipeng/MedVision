@@ -7,23 +7,29 @@ task_type: 2D
 model:
   type: "segmentation"
   network:
-    name: "unet"
+    name: "deeplabv3+"
   in_channels: 3
   out_channels: 4
   features: [32, 64, 128, 256]
-  dropout: 0.1
   loss:
-    type: "dice"
+    type: "ce"
     smooth: 0.00001
+
   optimizer:
     type: "adam"
     lr: 0.001
-    weight_decay: 0.0001
+    weight_decay: 0.0
+
+  # optimizer:
+  #   type: "sgd"
+  #   lr: 0.001
+  #   momentum: 0.9
+  #   weight_decay: 0.0
+
   scheduler:
-    type: "plateau"
-    patience: 5
-    factor: 0.5
-    monitor: "val/val_loss"
+    type: "cosine"
+    eta_min: 0.0001
+
   metrics:
     dice:
       type: "dice"
@@ -37,7 +43,7 @@ data:
   type: "color" 
   data_dir: "Dataset"
   batch_size: 16
-  num_workers: 16
+  num_workers: 8
   pin_memory: true
 
   dataset_args:
@@ -72,20 +78,21 @@ data:
       - Normalize:
           mean: [0.485, 0.456, 0.406]
           std: [0.229, 0.224, 0.225]
+          
 training:
-  accelerator: auto
-  deterministic: false
+  max_epochs: 100
   devices: -1
-  early_stopping: true
-  experiment_name: color_image_segmentation
-  export_onnx: false  
-  input_height: 256
-  input_width: 256
-  log_every_n_steps: 10
-  max_epochs: 50
-  monitor: val/val_loss
-  monitor_mode: min
-  output_dir: outputs
+  accelerator: "auto"
+  precision: 16-mixed 
+  output_dir: "outputs"
+  experiment_name: "coal_segmentation"
+  monitor: "val/val_dice"  #`train/train_loss`, `train/train_loss_step`, `val/val_loss`, `val/val_dice`, `val/val_iou`, `train/train_loss_epoch`, `train/train_dice`, `train/train_iou`
+  monitor_mode: "max"
+  # early_stopping: true
   patience: 10
-  precision: 16-mixed
-  save_top_k: 3
+  save_top_k: 1
+  log_every_n_steps: 10
+  deterministic: false
+
+  export_onnx: true
+  onnx_opset_version: 18

@@ -68,7 +68,7 @@ def save_training_results(train_val_results, checkpoint_callback, test_results, 
         "best_model_score": float(checkpoint_callback.best_model_score)
         if checkpoint_callback.best_model_score is not None
         else None,
-        "monitor": config["training"].get("monitor", "val_loss"),
+        "monitor": config["training"].get("monitor", "val/val_loss"),
     }
 
     if converted_models:
@@ -91,7 +91,7 @@ def merge_into_results(dataset_stats_path, results_path):
         data2 = json.load(f)
 
     if isinstance(data1, dict) and isinstance(data2, dict):
-        merged = {**data1, **data2}  # results.json 的字段覆盖 dataset_stats.json
+        merged = {**data1, **data2}  
     elif isinstance(data1, list) and isinstance(data2, list):
         merged = data1 + data2
     else:
@@ -127,7 +127,7 @@ def train_model(config: Dict[str, Any]) -> None:
     checkpoint_callback = ModelCheckpoint(
         dirpath=os.path.join(config["training"]["output_dir"], "checkpoints"),
         filename=f"{config['training'].get('experiment_name')}",
-        monitor=config["training"].get("monitor", "val_loss"),
+        monitor=config["training"].get("monitor", "val/val_loss"),
         mode=config["training"].get("monitor_mode", "min"),
         save_top_k=config["training"].get("save_top_k", 1),
         save_last=False,
@@ -138,7 +138,7 @@ def train_model(config: Dict[str, Any]) -> None:
     # EarlyStopping callback
     if config["training"].get("early_stopping", False):
         early_stop_callback = EarlyStopping(
-            monitor=config["training"].get("monitor", "val_loss"),
+            monitor=config["training"].get("monitor", "val/val_loss"),
             mode=config["training"].get("monitor_mode", "min"),
             patience=config["training"].get("patience", 10),
             verbose=True,
@@ -174,7 +174,7 @@ def train_model(config: Dict[str, Any]) -> None:
         checkpoint_callback, model, datamodule, config
     ) or ([], None))
 
-    test_results = trainer.test(model, datamodule=datamodule)
+    test_results = trainer.test(model, datamodule=datamodule, ckpt_path="best")
 
     if config["training"].get("save_metrics", True):
         save_training_results(

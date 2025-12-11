@@ -41,7 +41,7 @@ model:
 # Data configuration
 data:
   type: "color" 
-  data_dir: "Dataset"
+  data_dir: "Coal_data"
   batch_size: 16
   num_workers: 8
   pin_memory: true
@@ -80,7 +80,7 @@ data:
           std: [0.229, 0.224, 0.225]
           
 training:
-  max_epochs: 100
+  max_epochs: 1
   devices: -1
   accelerator: "auto"
   precision: 16-mixed 

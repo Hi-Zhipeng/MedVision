@@ -157,7 +157,7 @@ class ColorImageDataset(Dataset):
         image = self.image_loader(image_path)
 
         # 加载掩码（如果可用）
-        if self.mode != "test" and self.mask_files[idx] is not None:
+        if self.mask_files[idx] is not None:
             mask_path = self.mask_files[idx]
             mask = self.mask_loader(mask_path)
         else:

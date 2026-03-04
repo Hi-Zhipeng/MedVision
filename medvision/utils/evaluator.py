@@ -3,6 +3,7 @@ Evaluation module for MedVision.
 """
 
 import os
+import torch
 from typing import Dict, Any
 from pathlib import Path
 import pytorch_lightning as pl
@@ -25,12 +26,10 @@ def test_model(config: Dict[str, Any]) -> None:
     
     # Load checkpoint if specified
     if "checkpoint_path" in config:
-
         from medvision.models import SegmentationModel
-        model = SegmentationModel.load_from_checkpoint(
-            config["checkpoint_path"],
-            config=config["model"]
-        )
+        ckpt = torch.load(config["checkpoint_path"], map_location="cpu")
+        model = SegmentationModel(ckpt["config"])
+        model.load_state_dict(ckpt["model_state_dict"])
     else:
         print("Warning: No checkpoint path provided, using initialized model.")
         # Load the model normally

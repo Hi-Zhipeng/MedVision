@@ -9,12 +9,13 @@ import shutil
 from typing import Dict, Any
 from pathlib import Path
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
+from pytorch_lightning.callbacks import EarlyStopping
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.utilities import rank_zero_only
 from medvision.models import get_model
 from medvision.datasets import get_datamodule
 from medvision.utils.onnx_utils import convert_models_to_onnx
+from medvision.utils.pt_checkpoint import PTCheckpoint
 
 
 import os
@@ -65,8 +66,8 @@ def save_training_results(train_val_results, checkpoint_callback, test_results, 
         "train_val_metrics": train_val_metrics,
         "test_metrics": test_metrics,
         "best_model_path": checkpoint_callback.best_model_path,
-        "best_model_score": float(checkpoint_callback.best_model_score)
-        if checkpoint_callback.best_model_score is not None
+        "best_model_score": float(checkpoint_callback.best_score)
+        if checkpoint_callback.best_score not in (float("inf"), float("-inf"))
         else None,
         "monitor": config["training"].get("monitor", "val/val_loss"),
     }
@@ -124,13 +125,11 @@ def train_model(config: Dict[str, Any]) -> None:
     # Configure callbacks
     callbacks = []
 
-    checkpoint_callback = ModelCheckpoint(
+    checkpoint_callback = PTCheckpoint(
         dirpath=os.path.join(config["training"]["output_dir"], "checkpoints"),
         filename=f"{config['training'].get('experiment_name')}",
         monitor=config["training"].get("monitor", "val/val_loss"),
         mode=config["training"].get("monitor_mode", "min"),
-        save_top_k=config["training"].get("save_top_k", 1),
-        save_last=False,
     )
 
     callbacks.append(checkpoint_callback)
@@ -174,7 +173,10 @@ def train_model(config: Dict[str, Any]) -> None:
         checkpoint_callback, model, datamodule, config
     ) or ([], None))
 
-    test_results = trainer.test(model, datamodule=datamodule, ckpt_path="best")
+    if checkpoint_callback.best_model_path and os.path.exists(checkpoint_callback.best_model_path):
+        ckpt = torch.load(checkpoint_callback.best_model_path, map_location="cpu")
+        model.load_state_dict(ckpt["model_state_dict"])
+    test_results = trainer.test(model, datamodule=datamodule)
 
     if config["training"].get("save_metrics", True):
         save_training_results(

@@ -126,7 +126,7 @@ def convert_models_to_onnx(
     converted_models = []
     
     print(f"Converting best model based on monitored metric: {os.path.basename(best_model_path)}")
-    print(f"Best model score: {checkpoint_callback.best_model_score}")
+    print(f"Best model score: {checkpoint_callback.best_score}")
     
     # 检查示例输入的设备
     print(f"Sample input device: {sample_input.device}")
@@ -136,8 +136,10 @@ def convert_models_to_onnx(
         print(f"\nConverting {ckpt_name}...")
         
         try:
-            # 加载模型
-            model = model_class.load_from_checkpoint(ckpt_path, config=config)
+            # 加载模型 (.pt 格式)
+            model = model_class(config=config)
+            ckpt = torch.load(ckpt_path, map_location='cpu')
+            model.load_state_dict(ckpt['model_state_dict'])
             model.eval()
             
             # 检查模型参数的设备
@@ -256,7 +258,7 @@ def convert_models_to_onnx(
     print(f"\n📁 Best model ONNX and Triton config saved to: {onnx_dir}")
     if converted_models:
         print(f"📊 Successfully converted best model: {converted_models[0]['model_name']}")
-        print(f"📈 Best model score: {checkpoint_callback.best_model_score}")
+        print(f"📈 Best model score: {checkpoint_callback.best_score}")
         if converted_models[0].get('triton_config_path'):
             print(f"🚀 Triton config generated: {converted_models[0]['triton_config_path']}")
     else:

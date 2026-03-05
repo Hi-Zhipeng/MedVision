@@ -157,10 +157,26 @@ def predict_model(config: Dict[str, Any]) -> None:
         raise ValueError("checkpoint_path must be specified for inference")
     
     print(f"Loading model from: {config['checkpoint_path']}")
-    model = SegmentationModel.load_from_checkpoint(
-        config["checkpoint_path"],
-        config=config["model"]
-    )
+
+    # 自动检测设备
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Using device: {device}")
+
+    # 支持 .pt 和 .ckpt 格式
+    checkpoint_path = config["checkpoint_path"]
+    if checkpoint_path.endswith('.pt'):
+        # 加载 .pt 格式
+        ckpt = torch.load(checkpoint_path, map_location=device)
+        model = SegmentationModel(ckpt["config"])
+        model.load_state_dict(ckpt["model_state_dict"])
+    else:
+        # 加载 .ckpt 格式
+        model = SegmentationModel.load_from_checkpoint(
+            checkpoint_path,
+            config=config["model"],
+            map_location=device
+        )
+    model.to(device)
     model.eval()
     
     # Create inference dataloader

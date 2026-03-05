@@ -38,4 +38,3 @@ class PTCheckpoint(Callback):
                 'config': pl_module.config
             }
             torch.save(checkpoint, self.best_model_path)
-            torch.save(pl_module.net.state_dict(), os.path.join(self.dirpath, f"{self.filename}_model.pt"))

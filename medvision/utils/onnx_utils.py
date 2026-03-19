@@ -137,7 +137,7 @@ def convert_models_to_onnx(
         
         try:
             # 加载模型
-            model = model_class.load_from_checkpoint(ckpt_path, config=config)
+            model = model_class.load_from_checkpoint(ckpt_path, config=config, weights_only=False)
             model.eval()
             
             # 检查模型参数的设备
